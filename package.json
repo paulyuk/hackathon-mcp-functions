@@ -1,0 +1,19 @@
+{
+  "name": "hackathon-mcp-functions",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Remote MCP server on Azure Functions for hackathon submissions",
+  "license": "MIT",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "func start",
+    "build": "echo 'JS only'",
+    "test": "node -e \"console.log('No tests yet')\""
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.1.0",
+    "@azure/identity": "^4.4.1",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {}
+}
