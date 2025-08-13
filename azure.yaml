@@ -1,0 +1,9 @@
+name: hackathon-mcp-functions
+infra:
+  provider: bicep
+  path: infra
+services:
+  api:
+    project: .
+    language: js
+    host: function
