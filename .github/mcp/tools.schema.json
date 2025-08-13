@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.org/hackathon-mcp-tools.schema.json",
+  "title": "Hackathon MCP Tools",
+  "type": "object",
+  "properties": {
+    "save_submission": {
+      "type": "object",
+      "title": "save_submission tool",
+      "properties": {
+        "description": { "const": "Persist a hackathon submission" },
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+            "email": { "type": "string" },
+            "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+            "description": { "type": "string", "minLength": 1, "maxLength": 2000 }
+          },
+          "required": ["name", "email", "title", "description"],
+          "additionalProperties": false
+        }
+      },
+      "required": ["description", "input_schema"],
+      "additionalProperties": false
+    },
+    "list_submissions": {
+      "type": "object",
+      "title": "list_submissions tool",
+      "properties": {
+        "description": { "const": "List hackathon submissions" },
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "email": { "type": "string" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "required": ["description", "input_schema"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["save_submission", "list_submissions"],
+  "additionalProperties": false
+}
