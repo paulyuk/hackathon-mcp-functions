@@ -48,7 +48,7 @@ async function listSubmissions(args) {
     };
   }
 
-  const { resources } = await container.items.query(querySpec, { enableCrossPartitionQuery: true }).fetchAll();
+  const { resources } = await container.items.query(querySpec).fetchAll();
   return { ok: true, result: { items: resources || [] } };
 }
 

@@ -1,5 +1,5 @@
 const { CosmosClient } = require("@azure/cosmos");
-const { DefaultAzureCredential, ManagedIdentityCredential } = require("@azure/identity");
+const { DefaultAzureCredential } = require("@azure/identity");
 
 let cached = null;
 
@@ -12,12 +12,9 @@ function createClient() {
     return new CosmosClient({ endpoint, key });
   }
 
-  // Try AAD (Managed Identity / Default Credential)
-  // Note: Newer Cosmos SDK supports AAD via 'aadCredentials' or 'tokenCredential' depending on version.
-  // This uses the 'aadCredentials' field supported in v4.
-  const credential = new ManagedIdentityCredential()
-    || new DefaultAzureCredential();
-  return new CosmosClient({ endpoint, aadCredentials: credential });
+  // Use Azure AD (Managed Identity/DefaultAzureCredential)
+  const credential = new DefaultAzureCredential();
+  return new CosmosClient({ endpoint, tokenCredential: credential });
 }
 
 async function getContainer() {
