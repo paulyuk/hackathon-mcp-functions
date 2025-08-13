@@ -1,0 +1,78 @@
+openapi: 3.0.1
+info:
+  title: Hackathon Submissions API
+  version: 1.0.0
+paths:
+  /api/submissions:
+    post:
+      operationId: saveSubmission
+      summary: Save a hackathon submission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmissionInput'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+        '400':
+          description: Bad Request
+    get:
+      operationId: listSubmissions
+      summary: List hackathon submissions
+      parameters:
+        - in: query
+          name: email
+          schema:
+            type: string
+          required: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Submission'
+components:
+  schemas:
+    SubmissionInput:
+      type: object
+      required: [name, email, title, description]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+        title:
+          type: string
+          minLength: 1
+          maxLength: 120
+        description:
+          type: string
+          minLength: 1
+          maxLength: 2000
+    Submission:
+      allOf:
+        - $ref: '#/components/schemas/SubmissionInput'
+        - type: object
+          properties:
+            id:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
