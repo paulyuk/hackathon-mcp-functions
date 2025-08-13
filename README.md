@@ -13,38 +13,37 @@ Backed by Azure Cosmos DB (NoSQL). Designed to pair with the prompt/spec in `.gi
 ## Tool contracts
 See `.github/mcp/tools.schema.json` for input shapes.
 
-## Environment
-- COSMOS_ENDPOINT: Cosmos DB account endpoint (e.g., https://<account>.documents.azure.com:443/)
-- COSMOS_KEY: (optional) Primary key for local/dev; omit in Azure to use Managed Identity
-- COSMOS_DATABASE: hackathon (default)
-- COSMOS_CONTAINER: submissions (default)
-
-Managed Identity (recommended in Azure) will be used when COSMOS_KEY is not set and the Function App has RBAC to Cosmos DB.
-
-## Local dev (optional)
-1. Install Azure Functions Core Tools and Node 18+
-2. Create `local.settings.json`:
+## Local dev
+- Prereqs: Node 18+, Azure Functions Core Tools, npm
+- Steps:
+```zsh
+npm install
+func start
 ```
-{
-  "IsEncrypted": false,
-  "Values": {
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "FUNCTIONS_WORKER_RUNTIME": "node",
-    "COSMOS_ENDPOINT": "https://<account>.documents.azure.com:443/",
-    "COSMOS_KEY": "<primary key>",
-    "COSMOS_DATABASE": "hackathon",
-    "COSMOS_CONTAINER": "submissions"
-  }
-}
+Optionally, create `local.settings.json` with storage and Cosmos settings if you want to hit a live Cosmos account.
+
+## Deploy with azd
+- Prereqs: Azure CLI, azd, and an Azure subscription
+```zsh
+azd provision --location eastus
+azd deploy
 ```
-3. npm install
-4. func start
+This provisions: Storage, App Insights, Cosmos DB (serverless), and a Function App (Node 18). The app settings include COSMOS_ENDPOINT/DATABASE/CONTAINER. For production, grant the Function App Managed Identity RBAC on Cosmos and remove any keys.
 
-## Deployment
-- Deploy to Azure Functions (Consumption or Premium)
-- Assign Managed Identity and grant Cosmos DB RBAC (Read/Write on the container)
-- Configure application settings: COSMOS_ENDPOINT, COSMOS_DATABASE, COSMOS_CONTAINER
-
-## Notes
-- Partition key is `/email`. Cross-partition queries are enabled for listing recent submissions.
-- Timestamps set server-side (ISO UTC).
+## Test calls
+- List tools:
+```zsh
+curl -s https://<FUNCTION_APP>.azurewebsites.net/api/mcp/tools | jq
+```
+- Save submission:
+```zsh
+curl -s -X POST https://<FUNCTION_APP>.azurewebsites.net/api/mcp/call \
+  -H 'content-type: application/json' \
+  -d '{"tool":"save_submission","arguments":{"name":"Ada","email":"ada@example.com","title":"Agent","description":"desc"}}' | jq
+```
+- List submissions:
+```zsh
+curl -s -X POST https://<FUNCTION_APP>.azurewebsites.net/api/mcp/call \
+  -H 'content-type: application/json' \
+  -d '{"tool":"list_submissions","arguments":{}}' | jq
+```
