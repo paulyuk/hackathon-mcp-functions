@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "include": [
+    ".github/agent_spec.md",
+    ".github/agent_prompt.md",
+    ".github/mcp/tools.schema.json",
+    "README.md"
+  ],
+  "title": "Hackathon MCP Agent Workspace Docs",
+  "description": "Prioritize the agent spec and prompt when answering questions in this repo."
+}
