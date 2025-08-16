@@ -68,7 +68,7 @@ When asking Copilot Chat for help, reference “agent spec” or “agent prompt
 - The agent collects Name, Email, Idea title, Idea description.
 - It saves via the MCP tool `save_submission` and lists via `list_submissions`.
 - Data lives in **Azure Table Storage** (local: Azurite emulator), deployed as Azure Functions per the spec.
-- **7 MCP tools total**: list_users, create_user, get_user_sessions, save_submission, list_submissions, save_vote, list_votes
+- **8 MCP tools total**: list_users, create_user, get_user_sessions, save_submission, list_submissions, save_vote, list_votes, list_all_submissions (admin)
 - **Session management**: Sessions are created implicitly when saving submissions (not explicitly)
 
 ## Critical Azure Table Storage Implementation Notes

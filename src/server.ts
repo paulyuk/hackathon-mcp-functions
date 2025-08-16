@@ -26,6 +26,11 @@ const ListSubmissionsSchema = z.object({
   email: z.string().optional(),
 });
 
+const ListAllSubmissionsSchema = z.object({
+  sessionId: z.string().optional(),
+  email: z.string().optional(),
+});
+
 const SaveVoteSchema = z.object({
   submissionId: z.string(),
   voterEmail: z.string(),
@@ -108,10 +113,38 @@ export function createServer(): Server {
         },
         {
           name: "list_submissions",
-          description: "List all hackathon submissions",
+          description: "List submissions for a specific session",
           inputSchema: {
             type: "object",
-            properties: {},
+            properties: {
+              sessionId: {
+                type: "string",
+                description: "Session ID to list submissions for",
+              },
+              email: {
+                type: "string", 
+                description: "Optional email filter",
+              },
+            },
+            required: ["sessionId"],
+          },
+        },
+        {
+          name: "list_all_submissions",
+          description: "List all submissions across all sessions (admin tool)",
+          inputSchema: {
+            type: "object",
+            properties: {
+              sessionId: {
+                type: "string",
+                description: "Optional session ID to filter submissions",
+              },
+              email: {
+                type: "string",
+                description: "Optional email filter",
+              },
+            },
+            required: [],
           },
         },
         {
@@ -226,6 +259,19 @@ export function createServer(): Server {
         case "list_submissions": {
           const validated = ListSubmissionsSchema.parse(args);
           const submissions = await storage.listSubmissions(validated.sessionId);
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(submissions, null, 2),
+              },
+            ],
+          };
+        }
+
+        case "list_all_submissions": {
+          const validated = ListAllSubmissionsSchema.parse(args);
+          const submissions = await storage.listAllSubmissions(validated.sessionId);
           return {
             content: [
               {

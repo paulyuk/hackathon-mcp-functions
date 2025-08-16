@@ -134,8 +134,20 @@ async function testMCPServer() {
       console.log('❌ Final list_users failed:', error.message);
     }
 
-    // Test 7: Save a vote
-    console.log('\n🧪 Test 7: Save Vote');
+    // Test 8: List all submissions (admin tool)
+    console.log('\n🧪 Test 8: List All Submissions (Admin)');
+    try {
+      const listAllResult = await client.callTool({
+        name: 'list_all_submissions',
+        arguments: {}
+      });
+      console.log('✅ list_all_submissions result:', JSON.stringify(listAllResult, null, 2));
+    } catch (error) {
+      console.log('❌ list_all_submissions failed:', error.message);
+    }
+
+    // Test 9: Save a vote
+    console.log('\n🧪 Test 9: Save Vote');
     try {
       if (aliceSubmissionId) {
         const voteResult = await client.callTool({
@@ -154,8 +166,8 @@ async function testMCPServer() {
       console.log('❌ save_vote failed:', error.message);
     }
 
-    // Test 8: List votes
-    console.log('\n🧪 Test 8: List Votes');
+    // Test 10: List votes
+    console.log('\n🧪 Test 10: List Votes');
     try {
       const listVotesResult = await client.callTool({
         name: 'list_votes',

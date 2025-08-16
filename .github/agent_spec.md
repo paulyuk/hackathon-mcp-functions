@@ -14,12 +14,13 @@ Required fields
 ## Architecture (Azure-friendly, MCP-based)
 - Agent (Azure AI Studio or compatible MCP client): Runs the conversation and calls MCP tools exposed by a remote MCP server.
 - Remote MCP Server: Hosted on Azure Functions using MCP SDK with StreamableHTTPServerTransport
-  - Tools provided by the MCP server (7 total):
+  - Tools provided by the MCP server (8 total):
     - `list_users`: List all registered users
     - `create_user`: Create a new user explicitly (for testing)
     - `get_user_sessions`: Get game sessions for a user
     - `save_submission`: Persist a submission to a game session (auto-creates user and session)
-    - `list_submissions`: Retrieve submissions for a session
+    - `list_submissions`: Retrieve submissions for a session (requires sessionId)
+    - `list_all_submissions`: Admin tool to list submissions across all sessions (optional sessionId)
     - `save_vote`: Save or update votes on submissions
     - `list_votes`: Retrieve votes for sessions/submissions
 - Data store: Azure Table Storage (via Azure Storage SDK)
@@ -55,7 +56,11 @@ Notes
 - `list_submissions`
   - params schema: `{ sessionId: string, email?: string }`
   - result: `{ items: Submission[] }` where Submission = above fields
-  - behavior: return submissions for a game session, optionally filtered by email
+  - behavior: return submissions for a specific game session (sessionId required), optionally filtered by email
+- `list_all_submissions`
+  - params schema: `{ sessionId?: string, email?: string }`
+  - result: `{ items: Submission[] }` where Submission = above fields
+  - behavior: **admin tool** to return submissions across all sessions, optionally filtered by sessionId or email
 - `save_vote`
   - params schema: `{ submissionId: string, voterEmail: string, voteType: "like"|"dislike" }`
   - result: `{ id, sessionId, voterEmail, submissionId, voteType, createdAt }`
@@ -70,6 +75,8 @@ Notes
 - Session names are auto-generated as "Session for {submission_title}"
 - Use `get_user_sessions(userId)` where userId = email to retrieve user's sessions
 - Multiple users can submit to the same sessionId (hackathon event)
+- Use `list_submissions(sessionId)` for session-specific listing
+- Use `list_all_submissions()` for admin overview across all sessions
 
 A reference JSON schema for all tools is provided in .github/mcp/tools.schema.json.
   - params schema: { sessionId: string, name: string[1..100], email: string, title: string[1..120], description: string[1..2000] }
@@ -139,7 +146,7 @@ Validation
 ## Implementation sketch (Azure Functions + MCP Server)
 - Use Azure Functions (Node.js) with custom handler to host MCP server endpoints
 - Use @modelcontextprotocol/sdk with StreamableHTTPServerTransport
-- Register seven MCP tools in the server with proper input/output schemas
+- Register eight MCP tools in the server with proper input/output schemas
 - Use @azure/data-tables SDK with proper connection string format:
   ```json
   "AzureWebJobsStorage": "AccountName=devstoreaccount1;AccountKey=...;DefaultEndpointsProtocol=http;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;"

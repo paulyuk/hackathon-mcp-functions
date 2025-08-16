@@ -46,6 +46,18 @@ module.exports = {
       additionalProperties: false
     }
   },
+  list_all_submissions: {
+    description: "List all submissions across sessions (admin tool)",
+    input_schema: {
+      type: "object",
+      properties: {
+        sessionId: { type: "string" },
+        email: { type: "string" }
+      },
+      required: [],
+      additionalProperties: false
+    }
+  },
   save_vote: {
     description: "Save or update a vote for a submission",
     input_schema: {

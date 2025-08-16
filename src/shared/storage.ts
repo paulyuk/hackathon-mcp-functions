@@ -349,6 +349,12 @@ export async function listSubmissions(sessionId?: string): Promise<SubmissionDTO
   }
 }
 
+// Admin function to list all submissions (alias for listSubmissions with optional sessionId)
+export async function listAllSubmissions(sessionId?: string): Promise<SubmissionDTO[]> {
+  console.log('Admin listAllSubmissions called with sessionId:', sessionId);
+  return listSubmissions(sessionId);
+}
+
 // Vote operations
 export async function saveVote(
   submissionId: string,
