@@ -1,0 +1,43 @@
+{
+  "name": "hackathon-agent-service",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "OpenAI Agent SDK service for hackathon submissions using MCP tools",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js", 
+    "dev": "node --import tsx/esm src/index.ts",
+    "test-client": "node --import tsx/esm ../../tests/test-agent-client.ts",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.11.1",
+    "@azure/openai": "^2.0.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@openai/agents": "^0.0.17",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "fs": "^0.0.1-security",
+    "node-fetch": "^3.3.2",
+    "openai": "^5.12.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.14",
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.0.0",
+    "@types/node-fetch": "^2.6.4",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "hackathon",
+    "agent",
+    "mcp",
+    "openai",
+    "azure"
+  ],
+  "author": "",
+  "license": "MIT"
+}

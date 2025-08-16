@@ -12,7 +12,11 @@ Required fields
 - Idea description
 
 ## Architecture (Azure-friendly, MCP-based)
-- Agent (Azure AI Studio or compatible MCP client): Runs the conversation and calls MCP tools exposed by a remote MCP server.
+- Agent (OpenAI Agent SDK): Runs the conversation and calls MCP tools exposed by a remote MCP server.
+- Agent Service: Uses OpenAI Agent SDK with MCPServerStreamableHttp to connect to MCP server endpoint
+  - **Azure OpenAI Integration**: Uses AzureOpenAI client with Entra identity (DefaultAzureCredential)
+  - **Model Configuration**: OpenAIChatCompletionsModel with azureADTokenProvider for automatic token refresh
+  - **REST API**: Exposes /chat, /health, /admin/tools endpoints on port 3000
 - Remote MCP Server: Hosted on Azure Functions using MCP SDK with StreamableHTTPServerTransport
   - Tools provided by the MCP server (8 total):
     - `list_users`: List all registered users
@@ -32,6 +36,8 @@ Required fields
 Notes
 - **Session Management**: Sessions are created implicitly when first submission is saved (not explicitly)
 - **Connection String**: Must use full endpoint format for Azurite (not "UseDevelopmentStorage=true")
+- **Azure OpenAI**: Uses Entra identity authentication, no API keys required
+- **Network**: MCP server connection uses IPv4 (127.0.0.1:7071) to avoid IPv6 issues
 - **Azure Table Storage**: Uses plain object entities (not extending TableEntity), odata helper for queries
 - Use Azurite for local development with manual table creation
 - CORS headers configured for MCP Inspector and client access
@@ -143,11 +149,21 @@ Validation
 - Trim all inputs; reject if empty after trim
 - Basic email check; lowercase canonicalization
 
-## Implementation sketch (Azure Functions + MCP Server)
+## Implementation sketch (Azure Functions + MCP Server + OpenAI Agent SDK)
 - Use Azure Functions (Node.js) with custom handler to host MCP server endpoints
 - Use @modelcontextprotocol/sdk with StreamableHTTPServerTransport
 - Register eight MCP tools in the server with proper input/output schemas
-- Use @azure/data-tables SDK with proper connection string format:
+- Use @azure/data-tables SDK with proper connection string format
+- Use @openai/agents SDK to create agent service that connects to MCP server via MCPServerStreamableHttp
+- **Azure OpenAI Configuration**: 
+  - Import `AzureOpenAI` from 'openai' and `OpenAIChatCompletionsModel` from '@openai/agents'
+  - Use `DefaultAzureCredential` with `azureADTokenProvider` for automatic token refresh
+  - Model: `new OpenAIChatCompletionsModel(azureClient, deploymentName)`
+  - Environment: AZURE_OPENAI_ENDPOINT (.openai.azure.com), AZURE_OPENAI_DEPLOYMENT, USE_AZURE_IDENTITY=true
+- Agent implements the prompt behavior from .github/agent_prompt.md to guide hackathon submissions
+- Deploy agent service separately or alongside MCP server on Azure
+- Agent service provides REST API endpoints (/chat, /health, /admin/tools)
+- Test client included for validating agent conversations
   ```json
   "AzureWebJobsStorage": "AccountName=devstoreaccount1;AccountKey=...;DefaultEndpointsProtocol=http;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;"
   ```

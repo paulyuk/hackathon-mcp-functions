@@ -11,7 +11,17 @@
     "build": "tsc",
     "dev": "tsc && func start",
     "clean": "rm -rf dist/",
-    "test": "node -e \"console.log('No tests yet')\"",
+    "test": "node tests/test-mcp-client.js",
+    "test-agent": "cd src/agent && npm run test-client",
+    "test-all": "npm run test && npm run test-agent",
+    "validate": "node tests/validate.js",
+    "agent-dev": "cd src/agent && npm run dev",
+    "agent-build": "cd src/agent && npm run build",
+    "agent-install": "cd src/agent && npm install",
+    "chat": "cd src/agent && node --import tsx/esm ../../tests/interactive-chat.ts",
+    "chat-demo": "cd src/agent && node --import tsx/esm ../../tests/test-agent-client.ts",
+    "chat-message": "cd src/agent && node --import tsx/esm ../../tests/test-agent-client.ts --message",
+    "chat-health": "cd src/agent && node --import tsx/esm ../../tests/test-agent-client.ts --health",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

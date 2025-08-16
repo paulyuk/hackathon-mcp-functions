@@ -3,7 +3,7 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
-const SERVER_URL = 'http://localhost:7071/mcp';
+const SERVER_URL = 'http://127.0.0.1:7071/mcp';
 
 async function testMCPServer() {
   console.log('🧪 Starting MCP Client SDK Test');
