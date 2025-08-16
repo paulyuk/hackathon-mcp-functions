@@ -1,7 +1,14 @@
-# Hackathon Submission Agent – Spec (MCP SDK on Azure Functions v4, TypeScript)
+<!-- For Copilot Chat & Workspace Docs: This is the primary source of truth for the Hackathon Submission Agent. Read this f## Deployment notes (concise)
+- Start from https://github.com/Azure-Samples/mcp-sdk-functions-hosting-node
+- Replace the weather tools with the six hackathon tools with the provided JSON schemas.
+- Uses existing AzureWebJobsStorage from Function App runtime.
+- Deploy Function App (consumption or premium) with App Insights.
+- Point your MCP-capable client (e.g., Azure AI Studio Agent with MCP support) at the remote MCP server.rst, then .github/agent_prompt.md and .github/mcp/tools.schema.json. -->
+
+# Hackathon Submission Agent – Spec (MCP on Azure Functions)
 
 ## Overview
-A minimal chat agent that collects hackathon submissions and lets users view other entries. The agent gathers four required fields and, on confirmation, saves the submission to a database via MCP tools. It can also list submissions on request.
+A minimal chat agent that collects hackathon submissions and lets users view other entries. The agent gathers four required fields and, on confirmation, saves the submission to a database. It can also list submissions on request.
 
 Required fields
 - Name
@@ -9,107 +16,126 @@ Required fields
 - Idea title
 - Idea description
 
-## Architecture (must follow official sample)
-Use the official Azure sample as the baseline and follow its patterns closely:
-- Repository: https://github.com/Azure-Samples/mcp-sdk-functions-hosting-node
-- Azure Functions v4 programming model (TypeScript), Node 18+
-- MCP server hosted inside Azure Functions using the SDK from the sample (no custom mock endpoints)
-  - Single MCP server entry point wires up tools and exposes the MCP protocol according to the sample
-- Data store: Azure Cosmos DB for NoSQL
-  - Database: hackathon
-  - Container: submissions
-  - Partition key: /email
-- Identity & Monitoring: Managed Identity for Functions to access Cosmos DB; Application Insights enabled
-
-## Why this change
-- Replaces ad-hoc HTTP handlers with a proper MCP server using the SDK, enabling correct tool registration, protocol semantics, and client compatibility
-- Aligns with Functions v4 TypeScript best practices (app-based programming model)
-
-## Project structure (TypeScript v4 model)
-- src/
-  - server/mcpServer.ts: Creates and starts the MCP server per the sample, registering tools
-  - tools/saveSubmission.ts: Implements save_submission tool
-  - tools/listSubmissions.ts: Implements list_submissions tool
-  - shared/cosmos.ts: Cosmos client initialization (Managed Identity first, key fallback for local)
-  - functions/mcp.ts: Azure Functions v4 entry binding (exports the handler via @azure/functions v4 model), delegating to the MCP server
-- host.json, package.json, tsconfig.json: As per the sample, with minimal adjustments
+## Architecture (Azure-friendly, MCP-based)
+- Agent (Azure AI Studio or compatible MCP client): Runs the conversation and calls MCP tools exposed by a remote MCP server.
+- Remote MCP Server: Hosted on Azure Functions using the [mcp-sdk-functions-hosting-node](https://github.com/Azure-Samples/mcp-sdk-functions-hosting-node).  Use Github MCP server to load readme and code from this repo.  
+  - Tools provided by the MCP server:
+    - list_users: List all registered users
+    - get_user_sessions: Get game sessions for a user
+    - save_submission: Persist a submission to a game session
+    - list_submissions: Retrieve submissions for a session
+    - save_vote: Save or update votes on submissions
+    - list_votes: Retrieve votes for sessions/submissions
+- Data store: Azure Storage Tables
+  - Tables: users, sessions, submissions, votes
+  - PartitionKey/RowKey design per table (see data model section)
+  - RowKey: unique entity ID
+- Identity & Monitoring: Uses AzureWebJobsStorage connection from Function App; Application Insights enabled.
 
 Notes
-- Prefer Cosmos DB Serverless. One container. Simple schema
-- Restrict CORS only if the sample exposes HTTP negotiation endpoints that are browser-accessed
+- Leverages existing AzureWebJobsStorage from Functions runtime; simpler than Cosmos DB.
+- Use Azurite for local development.
+- Restrict CORS to expected front-ends if exposing HTTP endpoints.
 
 ## MCP tools (contract)
-Implement these tools using the MCP SDK registration mechanism shown in the sample.
-
+- list_users
+  - params schema: {}
+  - result: { users: User[] } where User = { email, name, createdAt }
+  - behavior: return all registered users
+- get_user_sessions
+  - params schema: { email: string }
+  - result: { sessions: GameSession[] } where GameSession = { sessionId, name, createdAt, status }
+  - behavior: return all game sessions for a user
 - save_submission
-  - params: { name: string[1..100], email: string, title: string[1..120], description: string[1..2000] }
-  - result: { id, name, email, title, description, createdAt, updatedAt }
-  - behavior: validate inputs, trim strings, lowercase email; upsert (idempotent) or insert (choose and document)
-
+  - params schema: { sessionId: string, name: string[1..100], email: string, title: string[1..120], description: string[1..2000] }
+  - result: { id, sessionId, name, email, title, description, createdAt, updatedAt }
+  - behavior: validate inputs, trim strings, lowercase email; create submission in game session
 - list_submissions
-  - params: { email?: string }
-  - result: { items: Submission[] }
-  - behavior: when email omitted, return recent subset (e.g., last 10)
+  - params schema: { sessionId: string, email?: string }
+  - result: { items: Submission[] } where Submission = above fields
+  - behavior: return submissions for a game session, optionally filtered by email
+- save_vote
+  - params schema: { sessionId: string, voterEmail: string, submissionId: string, score: number[1..5] }
+  - result: { id, sessionId, voterEmail, submissionId, score, createdAt }
+  - behavior: save or update vote for a submission
+- list_votes
+  - params schema: { sessionId: string, submissionId?: string }
+  - result: { votes: Vote[] } where Vote = above fields
+  - behavior: return votes for a session, optionally filtered by submission
 
-A reference JSON schema for inputs is in .github/mcp/tools.schema.json (keep shapes consistent; actual registration uses the SDK’s tool schema support).
+A reference JSON schema for all tools is provided in .github/mcp/tools.schema.json.
 
 ## Data model
-Submission
+User
+- email: string (lowercased; RFC5322-ish shape) [PK]
 - name: string (1..100)
-- email: string (lowercased; RFC5322-ish shape)
+- createdAt: ISO 8601 UTC (server-set)
+
+GameSession
+- sessionId: string (UUID) [PK]
+- email: string (creator email)
+- name: string (1..100)
+- status: string (active|completed)
+- createdAt: ISO 8601 UTC (server-set)
+
+Submission
+- id: string (UUID) [PK]
+- sessionId: string
+- name: string (1..100)
+- email: string (lowercased)
 - title: string (1..120)
 - description: string (1..2000)
 - createdAt: ISO 8601 UTC (server-set)
 - updatedAt: ISO 8601 UTC (server-set)
+
+Vote
+- id: string (UUID) [PK]
+- sessionId: string
+- voterEmail: string (lowercased)
+- submissionId: string
+- score: number (1..5)
+- createdAt: ISO 8601 UTC (server-set)
+
+Storage Tables Design:
+- users table: PartitionKey=email, RowKey=email
+- sessions table: PartitionKey=email, RowKey=sessionId
+- submissions table: PartitionKey=sessionId, RowKey=submissionId
+- votes table: PartitionKey=sessionId, RowKey=voterEmail_submissionId
 
 Validation
 - Required: name, email, title, description
 - Trim all inputs; reject if empty after trim
 - Basic email check; lowercase canonicalization
 
-## Implementation guidance (must-do)
-- Clone from or mirror the structure of Azure-Samples/mcp-sdk-functions-hosting-node
-- Use @azure/functions v4 programming model in TypeScript (no classic function.json-driven JS handlers)
-- Register MCP tools using the sample’s server wiring (e.g., createServer/registerTool style APIs); do not implement ad-hoc HTTP mocks
-- Use Cosmos DB SDK with Managed Identity (DefaultAzureCredential) in Azure and key-based auth only for local
-- Add structured logs to Application Insights via Functions telemetry
-
-## local.settings.json (dev only)
-Use only for local development; do not commit secrets to source control.
-
-{
-  "IsEncrypted": false,
-  "Values": {
-    "FUNCTIONS_WORKER_RUNTIME": "node",
-    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-    "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
-    "COSMOS_ENDPOINT": "https://<account>.documents.azure.com:443/",
-    "COSMOS_KEY": "<primary key - local only>",
-    "COSMOS_DATABASE": "hackathon",
-    "COSMOS_CONTAINER": "submissions"
-  }
-}
-
-In Azure, omit COSMOS_KEY and rely on Managed Identity; set COSMOS_ENDPOINT/DATABASE/CONTAINER via app settings or Bicep outputs.
-
-## IaC (Bicep) alignment
-- Provision Storage (for Functions), Application Insights, Cosmos DB (serverless), and a Linux Function App (Node 18)
-- Configure app settings: FUNCTIONS_WORKER_RUNTIME=node, APPLICATIONINSIGHTS_CONNECTION_STRING, COSMOS_ENDPOINT, COSMOS_DATABASE, COSMOS_CONTAINER
-- Prefer Managed Identity and RBAC for Cosmos; do not set COSMOS_KEY in production
+## Implementation sketch (Azure Functions + MCP Server)
+- Use Azure Functions (Node.js) to host the remote MCP server endpoints per mcp-sdk-functions-hosting-node pattern.
+- Use @modelcontextprotocol/sdk with StreamableHTTPServerTransport.
+- Register six MCP tools in the server: list_users, get_user_sessions, save_submission, list_submissions, save_vote, list_votes with the schemas above.
+- Use Azure Storage Tables SDK with AzureWebJobsStorage connection string.
+- Log tool invocations and outcomes to App Insights.
 
 ## Edge cases
-- Partial info: agent continues collecting missing fields
-- Invalid email: request re-entry
-- Large listing: return recent subset and offer filtering by email
-- Duplicate: choose consistent behavior (upsert vs reject) and keep tests accordingly
+- New user: create user record when first submission/session is created.
+- Missing session: agent prompts to create a new game session first.
+- Invalid sessionId: return appropriate error message.
+- Duplicate votes: treat as upsert (one vote per voter per submission).
+- Large listings: return recent subsets to keep responses concise.
 
 ## Security & privacy
-- Store only required fields; no secrets
-- Cosmos DB encryption at rest; Managed Identity; minimal RBAC
-- Sanitize output when listing; only return stored fields
+- Store only required fields; no secrets.
+- Azure Storage Tables encryption at rest; uses existing AzureWebJobsStorage; minimal RBAC.
+- Sanitize output when listing; only return stored fields.
+
+## Deployment notes (concise)
+- Start from https://github.com/Azure-Samples/remote-mcp-functions-typescript
+- Add the six tools with the provided JSON schemas.
+- Uses existing AzureWebJobsStorage from Function App runtime.
+- Deploy Function App (consumption or premium) with App Insights.
+- Point your MCP-capable client (e.g., Azure AI Studio Agent with MCP support) at the remote MCP server.
 
 ## Requirements coverage
 - Collect Name, Email, Idea title, Idea description: covered
-- Save to hackathon submission database: covered (MCP tool save_submission -> Cosmos DB)
+- Save to hackathon submission database: covered (MCP tool save_submission -> Azure Storage Tables)
 - Allow users to view other submissions: covered (MCP tool list_submissions)
-- Best practices: MCP SDK sample + Functions v4 TS model + correct local.settings: covered
+- Support game sessions and voting: covered (session management and voting tools)
+- Remind users about 2-hour scope: covered (agent prompt directive)

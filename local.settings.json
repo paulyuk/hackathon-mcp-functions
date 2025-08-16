@@ -1,7 +1,7 @@
 {
-  "IsEncrypted": true,
+  "IsEncrypted": false,
   "Values": {
-    "FUNCTIONS_WORKER_RUNTIME": "CfDJ8Oh0K9J2vZ5Cgg1f5uPZ0BWU8KrxeUmnUUOzl0P/SAX5UGoPzjF2dmYwm9Ce9XkS3O9qPDp3a0KylZVOpGPz/2zvUFPEe4SlyItZTz5ikBR3yAMcqG9wLyuxtY2tN9F/vw=="
-  },
-  "ConnectionStrings": {}
+    "FUNCTIONS_WORKER_RUNTIME": "custom",
+    "AzureWebJobsStorage": "AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;DefaultEndpointsProtocol=http;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;QueueEndpoint=http://127.0.0.1:10001/devstoreaccount1;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;"
+  }
 }

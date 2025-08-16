@@ -1,12 +1,12 @@
 {
   "bindings": [
     {
-      "authLevel": "anonymous",
+      "authLevel": "function",
       "type": "httpTrigger",
       "direction": "in",
       "name": "req",
-      "methods": ["get"],
-      "route": "mcp/tools"
+      "methods": ["get", "post", "put", "delete", "patch", "head", "options"],
+      "route": "{*route}"
     },
     {
       "type": "http",
