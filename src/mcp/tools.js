@@ -13,9 +13,9 @@ module.exports = {
     input_schema: {
       type: "object",
       properties: {
-        email: { type: "string" }
+        userId: { type: "string" }
       },
-      required: ["email"],
+      required: ["userId"],
       additionalProperties: false
     }
   },
@@ -51,12 +51,11 @@ module.exports = {
     input_schema: {
       type: "object",
       properties: {
-        sessionId: { type: "string" },
-        voterEmail: { type: "string" },
         submissionId: { type: "string" },
-        score: { type: "number", minimum: 1, maximum: 5 }
+        voterEmail: { type: "string" },
+        voteType: { type: "string", enum: ["like", "dislike"] }
       },
-      required: ["sessionId", "voterEmail", "submissionId", "score"],
+      required: ["submissionId", "voterEmail", "voteType"],
       additionalProperties: false
     }
   },
