@@ -126,6 +126,31 @@ const entities = client.listEntities<User>({
 - **End-to-end Flow**: User creation → Session creation → Submission saving → Voting
 - **Azure Storage**: All CRUD operations validated with proper connection string format
 
+### Critical Agent Tool Calling Fix
+**Problem**: Agent was making multiple failed retry attempts with wrong parameter names (e.g., "ideaTitle", "ideaDescription" instead of "title", "description")
+
+**Solution**: Agent prompt must specify EXACT parameter names and include explicit error handling guidance:
+```
+**CRITICAL: Exact Parameter Names for save_submission**
+When calling save_submission, use these EXACT parameter names:
+- sessionId: "HackathonAugust2025"
+- name: (user's name)
+- email: (user's email)  
+- title: (idea title)
+- description: (idea description)
+
+DO NOT use "ideaTitle", "ideaDescription", or any other variations. Only use "title" and "description".
+
+Error Handling:
+- If a tool call fails, check the error message carefully before retrying
+- Do not make multiple rapid retry attempts - analyze the error first
+- Make only ONE attempt at save_submission with correct parameters
+```
+
+**Result**: Agent now makes successful tool calls on first attempt instead of confusing multiple retries.
+
+**Key Learning**: Agent prompts for MCP tool calling must be extremely precise about parameter names and include explicit error handling instructions to prevent confusion.
+
 ## Azure OpenAI Integration with Entra Identity
 
 ### OpenAI Agents SDK with Azure OpenAI Configuration

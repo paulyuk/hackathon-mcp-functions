@@ -39,6 +39,11 @@ Notes
 - **Azure OpenAI**: Uses Entra identity authentication, no API keys required
 - **Network**: MCP server connection uses IPv4 (127.0.0.1:7071) to avoid IPv6 issues
 - **Azure Table Storage**: Uses plain object entities (not extending TableEntity), odata helper for queries
+- **Agent Tool Calling**: Agent prompt must specify EXACT parameter names to avoid retry confusion
+  - Critical: Use precise parameter schemas in agent instructions
+  - Example: save_submission requires { sessionId, name, email, title, description } - not "ideaTitle" or "ideaDescription"
+  - Include error handling guidance to prevent multiple failed retry attempts
+  - One successful tool call is better than multiple confused retries
 - Use Azurite for local development with manual table creation
 - CORS headers configured for MCP Inspector and client access
 

@@ -137,3 +137,44 @@ curl -i http://127.0.0.1:10002/devstoreaccount1/Tables
 # Check Azure Functions logs
 func start --verbose
 ```
+
+## Agent Tool Calling Issues
+
+### Issue: Agent Makes Multiple Failed Retry Attempts with Wrong Parameter Names
+
+**Symptoms:**
+- Agent makes several attempts to call `save_submission` with incorrect parameter names like "ideaTitle", "ideaDescription"
+- Agent says things like "Sorry, I used the wrong parameter names" and retries multiple times
+- Eventually succeeds but confuses users with failed attempts
+
+**Root Cause:**
+Agent prompt wasn't explicit enough about exact MCP tool parameter names, causing the agent to guess different variations.
+
+**Solution:**
+Be extremely explicit in the agent prompt about exact parameter names and include error handling guidance:
+
+```markdown
+**CRITICAL: Exact Parameter Names for save_submission**
+When calling save_submission, use these EXACT parameter names:
+- sessionId: "HackathonAugust2025"
+- name: (user's name)
+- email: (user's email)  
+- title: (idea title)
+- description: (idea description)
+
+DO NOT use "ideaTitle", "ideaDescription", or any other variations. Only use "title" and "description".
+
+Error Handling:
+- If a tool call fails, check the error message carefully before retrying
+- Do not make multiple rapid retry attempts - analyze the error first
+- Make only ONE attempt at save_submission with correct parameters
+
+Workflow:
+5. When calling save_submission, use EXACTLY these parameters: { sessionId: "HackathonAugust2025", name: "...", email: "...", title: "...", description: "..." }
+```
+
+**Key Learning:**
+Agent prompts for tool calling must be precise about parameter names. Include exact examples and explicit error handling instructions to prevent confusion and multiple retries.
+
+**Result:**
+Agent now makes successful tool calls on first attempt instead of confusing multiple retries.
